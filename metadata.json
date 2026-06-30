@@ -1,0 +1,6 @@
+{
+  "name": "ASK Appointment",
+  "description": "Professional Aadhaar appointment and partner management system for ASK ECMP Centres and CSC Partners.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
