@@ -77,10 +77,12 @@ class AskRepository(private val dao: AskDao) {
             dao.insertSetting(AppSetting("commission_amount", "100"))
             dao.insertSetting(AppSetting("admin_username", "admin"))
             dao.insertSetting(AppSetting("admin_password", "admin123"))
-            dao.insertSetting(AppSetting("centre_name", "ASK Aadhaar Seva Kendra, Indore"))
-            dao.insertSetting(AppSetting("centre_address", "88, Mahatma Gandhi Road, Indore, MP"))
+            dao.insertSetting(AppSetting("centre_name", "Authorized Aadhaar Seva Kendra (ASK)"))
+            dao.insertSetting(AppSetting("centre_address", "Update Centre Address in Admin Settings, India"))
             dao.insertSetting(AppSetting("centre_phone", "+91 9988776655"))
-            dao.insertSetting(AppSetting("centre_email", "ask.indore@uidai.gov.in"))
+            dao.insertSetting(AppSetting("centre_email", "support.ask@uidai.gov.in"))
+            dao.insertSetting(AppSetting("centre_lat", "22.7196"))
+            dao.insertSetting(AppSetting("centre_lng", "75.8577"))
             dao.insertSetting(AppSetting("seeded", "true"))
 
             // Seed Partners

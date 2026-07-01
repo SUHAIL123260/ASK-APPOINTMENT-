@@ -461,13 +461,6 @@ fun PartnerNewAppointmentTab(
                     )
 
                     DocumentUploadRow(
-                        label = "Supporting ID/Address Proof *",
-                        isUploaded = isSupportDocUploaded,
-                        onClick = { isSupportDocUploaded = !isSupportDocUploaded },
-                        tag = "upload_support"
-                    )
-
-                    DocumentUploadRow(
                         label = "Mandatory CSC Stamp *",
                         isUploaded = isCscStampUploaded,
                         onClick = { isCscStampUploaded = !isCscStampUploaded },
@@ -496,7 +489,7 @@ fun PartnerNewAppointmentTab(
                                 serviceType = selectedService,
                                 photographPath = if (isPhotoUploaded) "photo_path" else null,
                                 aadhaarCopyPath = if (isAadhaarCopyUploaded) "aadhaar_path" else null,
-                                supportingDocPath = if (isSupportDocUploaded) "doc_path" else null,
+                                supportingDocPath = null,
                                 cscStampPath = if (isCscStampUploaded) "csc_stamp_path" else null,
                                 remarks = remarks,
                                 onSuccess = { insertedId ->

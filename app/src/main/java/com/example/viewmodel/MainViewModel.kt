@@ -40,17 +40,23 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     private val _commissionAmount = MutableStateFlow(100.0)
     val commissionAmount: StateFlow<Double> = _commissionAmount.asStateFlow()
 
-    private val _centreName = MutableStateFlow("ASK Aadhaar Seva Kendra")
+    private val _centreName = MutableStateFlow("Authorized Aadhaar Seva Kendra (ASK)")
     val centreName: StateFlow<String> = _centreName.asStateFlow()
 
-    private val _centreAddress = MutableStateFlow("88, Mahatma Gandhi Road, Indore")
+    private val _centreAddress = MutableStateFlow("Update Centre Address in Admin Settings, India")
     val centreAddress: StateFlow<String> = _centreAddress.asStateFlow()
 
     private val _centrePhone = MutableStateFlow("+91 9988776655")
     val centrePhone: StateFlow<String> = _centrePhone.asStateFlow()
 
-    private val _centreEmail = MutableStateFlow("ask.indore@uidai.gov.in")
+    private val _centreEmail = MutableStateFlow("support.ask@uidai.gov.in")
     val centreEmail: StateFlow<String> = _centreEmail.asStateFlow()
+
+    private val _centreLat = MutableStateFlow(22.7196)
+    val centreLat: StateFlow<Double> = _centreLat.asStateFlow()
+
+    private val _centreLng = MutableStateFlow(75.8577)
+    val centreLng: StateFlow<Double> = _centreLng.asStateFlow()
 
     // Filter properties for Partner and Admin dashboards
     private val _appointmentSearchQuery = MutableStateFlow("")
@@ -72,6 +78,8 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             repository.getSetting("centre_address")?.let { _centreAddress.value = it }
             repository.getSetting("centre_phone")?.let { _centrePhone.value = it }
             repository.getSetting("centre_email")?.let { _centreEmail.value = it }
+            repository.getSetting("centre_lat")?.toDoubleOrNull()?.let { _centreLat.value = it }
+            repository.getSetting("centre_lng")?.toDoubleOrNull()?.let { _centreLng.value = it }
         }
     }
 
@@ -304,19 +312,23 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
-    fun updateApplicationSettings(commission: Double, name: String, address: String, phone: String, email: String) {
+    fun updateApplicationSettings(commission: Double, name: String, address: String, phone: String, email: String, lat: Double, lng: Double) {
         viewModelScope.launch {
             repository.saveSetting("commission_amount", commission.toString())
             repository.saveSetting("centre_name", name)
             repository.saveSetting("centre_address", address)
             repository.saveSetting("centre_phone", phone)
             repository.saveSetting("centre_email", email)
+            repository.saveSetting("centre_lat", lat.toString())
+            repository.saveSetting("centre_lng", lng.toString())
 
             _commissionAmount.value = commission
             _centreName.value = name
             _centreAddress.value = address
             _centrePhone.value = phone
             _centreEmail.value = email
+            _centreLat.value = lat
+            _centreLng.value = lng
         }
     }
 

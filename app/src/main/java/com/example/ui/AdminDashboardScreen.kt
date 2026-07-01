@@ -961,20 +961,26 @@ fun AdminSettingsAndReportsTab(viewModel: MainViewModel) {
     val cAddress by viewModel.centreAddress.collectAsState()
     val cPhone by viewModel.centrePhone.collectAsState()
     val cEmail by viewModel.centreEmail.collectAsState()
+    val cLat by viewModel.centreLat.collectAsState()
+    val cLng by viewModel.centreLng.collectAsState()
 
     var editRate by remember { mutableStateOf("") }
     var editName by remember { mutableStateOf("") }
     var editAddress by remember { mutableStateOf("") }
     var editPhone by remember { mutableStateOf("") }
     var editEmail by remember { mutableStateOf("") }
+    var editLat by remember { mutableStateOf("") }
+    var editLng by remember { mutableStateOf("") }
 
     // Synchronize inputs with state once on open
-    LaunchedEffect(currentRate, cName, cAddress, cPhone, cEmail) {
+    LaunchedEffect(currentRate, cName, cAddress, cPhone, cEmail, cLat, cLng) {
         editRate = currentRate.toInt().toString()
         editName = cName
         editAddress = cAddress
         editPhone = cPhone
         editEmail = cEmail
+        editLat = cLat.toString()
+        editLng = cLng.toString()
     }
 
     var reportType by remember { mutableStateOf(0) } // 0 = Daily, 1 = Monthly
@@ -1111,17 +1117,43 @@ fun AdminSettingsAndReportsTab(viewModel: MainViewModel) {
                     modifier = Modifier.fillMaxWidth()
                 )
 
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    OutlinedTextField(
+                        value = editLat,
+                        onValueChange = { editLat = it },
+                        label = { Text("Centre Latitude") },
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                        singleLine = true,
+                        modifier = Modifier.weight(1f)
+                    )
+                    OutlinedTextField(
+                        value = editLng,
+                        onValueChange = { editLng = it },
+                        label = { Text("Centre Longitude") },
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                        singleLine = true,
+                        modifier = Modifier.weight(1f)
+                    )
+                }
+
                 Spacer(modifier = Modifier.height(8.dp))
 
                 Button(
                     onClick = {
                         val rateVal = editRate.toDoubleOrNull() ?: currentRate
+                        val latVal = editLat.toDoubleOrNull() ?: cLat
+                        val lngVal = editLng.toDoubleOrNull() ?: cLng
                         viewModel.updateApplicationSettings(
                             commission = rateVal,
                             name = editName.trim(),
                             address = editAddress.trim(),
                             phone = editPhone.trim(),
-                            email = editEmail.trim()
+                            email = editEmail.trim(),
+                            lat = latVal,
+                            lng = lngVal
                         )
                     },
                     modifier = Modifier

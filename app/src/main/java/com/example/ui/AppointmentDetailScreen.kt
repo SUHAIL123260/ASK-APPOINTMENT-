@@ -1,9 +1,17 @@
 package com.example.ui
 
+import android.Manifest
 import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageManager
+import android.location.Location
+import android.location.LocationListener
+import android.location.LocationManager
 import android.net.Uri
+import android.os.Bundle
 import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.*
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
@@ -18,12 +26,14 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.drawscope.rotate
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.content.ContextCompat
 import com.example.data.Appointment
 import com.example.ui.components.DeterministicQrCode
 import com.example.ui.theme.*
@@ -55,6 +65,91 @@ fun AppointmentDetailScreen(
     val centreName by viewModel.centreName.collectAsState()
     val centreAddress by viewModel.centreAddress.collectAsState()
     val centrePhone by viewModel.centrePhone.collectAsState()
+    val centreLat by viewModel.centreLat.collectAsState()
+    val centreLng by viewModel.centreLng.collectAsState()
+
+    // --- Live GPS Tracking state ---
+    var liveLocation by remember { mutableStateOf<Location?>(null) }
+    var isTracking by remember { mutableStateOf(false) }
+    var permissionGranted by remember {
+        mutableStateOf(
+            ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED
+        )
+    }
+
+    val permissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestMultiplePermissions()
+    ) { permissions ->
+        val fineGranted = permissions[Manifest.permission.ACCESS_FINE_LOCATION] ?: false
+        val coarseGranted = permissions[Manifest.permission.ACCESS_COARSE_LOCATION] ?: false
+        permissionGranted = fineGranted || coarseGranted
+        if (permissionGranted) {
+            isTracking = true
+            Toast.makeText(context, "GPS Permission Granted!", Toast.LENGTH_SHORT).show()
+        } else {
+            Toast.makeText(context, "GPS Permission Denied!", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    LaunchedEffect(isTracking, permissionGranted) {
+        if (isTracking && permissionGranted) {
+            val locationManager = context.getSystemService(Context.LOCATION_SERVICE) as LocationManager
+            val locationListener = object : LocationListener {
+                override fun onLocationChanged(location: Location) {
+                    liveLocation = location
+                }
+                override fun onStatusChanged(provider: String?, status: Int, extras: Bundle?) {}
+                override fun onProviderEnabled(provider: String) {}
+                override fun onProviderDisabled(provider: String) {}
+            }
+
+            try {
+                // Instantly try to get last known location
+                val providers = locationManager.getProviders(true)
+                var bestLocation: Location? = null
+                for (provider in providers) {
+                    val lastKnown = locationManager.getLastKnownLocation(provider) ?: continue
+                    if (bestLocation == null || lastKnown.accuracy < bestLocation.accuracy) {
+                        bestLocation = lastKnown
+                    }
+                }
+                if (bestLocation != null) {
+                    liveLocation = bestLocation
+                }
+
+                if (locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER)) {
+                    locationManager.requestLocationUpdates(
+                        LocationManager.GPS_PROVIDER,
+                        1000L,
+                        0.5f,
+                        locationListener
+                    )
+                }
+                if (locationManager.isProviderEnabled(LocationManager.NETWORK_PROVIDER)) {
+                    locationManager.requestLocationUpdates(
+                        LocationManager.NETWORK_PROVIDER,
+                        1000L,
+                        0.5f,
+                        locationListener
+                    )
+                }
+            } catch (e: SecurityException) {
+                e.printStackTrace()
+            }
+
+            try {
+                while (true) {
+                    delay(1000L)
+                }
+            } finally {
+                try {
+                    locationManager.removeUpdates(locationListener)
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                }
+            }
+        }
+    }
 
     // Dialog state
     var showApproveDialog by remember { mutableStateOf(false) }
@@ -134,6 +229,237 @@ fun AppointmentDetailScreen(
                     // Pending/Rejected simple details view
                     CustomerDetailsCard(app)
                 }
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                // LIVE LOCATION TRACKING PANEL
+                Card(
+                    modifier = Modifier.fillMaxWidth().testTag("live_tracking_card"),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                    shape = RoundedCornerShape(12.dp),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+                ) {
+                    Column(modifier = Modifier.padding(16.dp)) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Icon(Icons.Default.MyLocation, "GPS Tracking", tint = SaffronOrange)
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text("Live GPS Location Tracking", fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                            }
+
+                            if (isTracking && liveLocation != null) {
+                                Surface(
+                                    color = StateGreen,
+                                    shape = CircleShape,
+                                    modifier = Modifier.size(8.dp)
+                                ) {}
+                            }
+                        }
+
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text(
+                            text = "Track your live distance and directions directly to the Aadhaar Seva Kendra in real-time.",
+                            fontSize = 11.sp,
+                            color = Color.Gray
+                        )
+
+                        Spacer(modifier = Modifier.height(12.dp))
+
+                        if (!permissionGranted) {
+                            Button(
+                                onClick = {
+                                    permissionLauncher.launch(
+                                        arrayOf(
+                                            Manifest.permission.ACCESS_FINE_LOCATION,
+                                            Manifest.permission.ACCESS_COARSE_LOCATION
+                                        )
+                                    )
+                                },
+                                modifier = Modifier.fillMaxWidth(),
+                                colors = ButtonDefaults.buttonColors(containerColor = SaffronOrange)
+                            ) {
+                                Icon(Icons.Default.GpsFixed, "Enable GPS")
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text("Enable Live GPS Tracking", fontWeight = FontWeight.Bold)
+                            }
+                        } else {
+                            if (!isTracking) {
+                                Button(
+                                    onClick = { isTracking = true },
+                                    modifier = Modifier.fillMaxWidth(),
+                                    colors = ButtonDefaults.buttonColors(containerColor = SaffronOrange)
+                                ) {
+                                    Icon(Icons.Default.PlayArrow, "Start GPS")
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                    Text("Start Tracking Live Location", fontWeight = FontWeight.Bold)
+                                }
+                            } else {
+                                val userLoc = liveLocation
+                                if (userLoc == null) {
+                                    Column(
+                                        modifier = Modifier.fillMaxWidth().padding(vertical = 12.dp),
+                                        horizontalAlignment = Alignment.CenterHorizontally
+                                    ) {
+                                        CircularProgressIndicator(color = SaffronOrange, modifier = Modifier.size(28.dp))
+                                        Spacer(modifier = Modifier.height(8.dp))
+                                        Text("Connecting to GPS Satellites...", fontSize = 12.sp, color = Color.Gray)
+                                    }
+                                } else {
+                                    val distanceResults = FloatArray(1)
+                                    var distanceText = "Calculating..."
+                                    var bearing = 0f
+                                    try {
+                                        Location.distanceBetween(
+                                            userLoc.latitude, userLoc.longitude,
+                                            centreLat, centreLng,
+                                            distanceResults
+                                        )
+                                        val distanceInMeters = distanceResults[0]
+                                        distanceText = if (distanceInMeters >= 1000) {
+                                            String.format("%.2f Km", distanceInMeters / 1000f)
+                                        } else {
+                                            String.format("%.0f meters", distanceInMeters)
+                                        }
+
+                                        val dLon = Math.toRadians(centreLng - userLoc.longitude)
+                                        val rLat1 = Math.toRadians(userLoc.latitude)
+                                        val rLat2 = Math.toRadians(centreLat)
+                                        val y = Math.sin(dLon) * Math.cos(rLat2)
+                                        val x = Math.cos(rLat1) * Math.sin(rLat2) - Math.sin(rLat1) * Math.cos(rLat2) * Math.cos(dLon)
+                                        var initialBearing = Math.toDegrees(Math.atan2(y, x))
+                                        bearing = ((initialBearing + 360) % 360).toFloat()
+                                    } catch (e: Exception) {
+                                        e.printStackTrace()
+                                    }
+
+                                    Row(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .background(SoftGrayBg, RoundedCornerShape(8.dp))
+                                            .padding(12.dp),
+                                        horizontalArrangement = Arrangement.SpaceBetween,
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Column {
+                                            Text("YOUR CURRENT GPS COORDINATES", fontSize = 8.sp, fontWeight = FontWeight.Bold, color = Color.Gray)
+                                            Text("Lat: ${String.format("%.5f", userLoc.latitude)}", fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                                            Text("Lng: ${String.format("%.5f", userLoc.longitude)}", fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                                            Text("Accuracy: ±${String.format("%.1f", userLoc.accuracy)}m", fontSize = 10.sp, color = Color.Gray)
+                                        }
+
+                                        Column(horizontalAlignment = Alignment.End) {
+                                            Text("DISTANCE TO ASK CENTRE", fontSize = 8.sp, fontWeight = FontWeight.Bold, color = Color.Gray)
+                                            Text(distanceText, fontSize = 18.sp, fontWeight = FontWeight.Black, color = AadhaarBlue)
+                                        }
+                                    }
+
+                                    Spacer(modifier = Modifier.height(16.dp))
+
+                                    Column(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        horizontalAlignment = Alignment.CenterHorizontally
+                                    ) {
+                                        Text("ASK CENTRE DIRECTION RADAR", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = Color.Gray)
+                                        Spacer(modifier = Modifier.height(8.dp))
+                                        Box(
+                                            modifier = Modifier
+                                                .size(120.dp)
+                                                .background(AadhaarBlue.copy(alpha = 0.05f), CircleShape)
+                                                .border(2.dp, AadhaarBlue.copy(alpha = 0.2f), CircleShape),
+                                            contentAlignment = Alignment.Center
+                                        ) {
+                                            Canvas(modifier = Modifier.size(100.dp)) {
+                                                drawCircle(
+                                                    color = SaffronOrange.copy(alpha = 0.15f),
+                                                    radius = size.minDimension / 2f
+                                                )
+                                                drawCircle(
+                                                    color = SaffronOrange.copy(alpha = 0.3f),
+                                                    radius = size.minDimension / 4f
+                                                )
+
+                                                drawLine(
+                                                    color = Color.LightGray.copy(alpha = 0.5f),
+                                                    start = androidx.compose.ui.geometry.Offset(size.width / 2, 0f),
+                                                    end = androidx.compose.ui.geometry.Offset(size.width / 2, size.height)
+                                                )
+                                                drawLine(
+                                                    color = Color.LightGray.copy(alpha = 0.5f),
+                                                    start = androidx.compose.ui.geometry.Offset(0f, size.height / 2),
+                                                    end = androidx.compose.ui.geometry.Offset(size.width, size.height / 2)
+                                                )
+
+                                                rotate(degrees = bearing) {
+                                                    val path = androidx.compose.ui.graphics.Path().apply {
+                                                        moveTo(size.width / 2f, 15f)
+                                                        lineTo(size.width / 2f - 12f, size.height / 2f + 15f)
+                                                        lineTo(size.width / 2f, size.height / 2f + 5f)
+                                                        lineTo(size.width / 2f + 12f, size.height / 2f + 15f)
+                                                        close()
+                                                    }
+                                                    drawPath(path = path, color = SaffronOrange)
+                                                }
+                                            }
+
+                                            Icon(
+                                                imageVector = Icons.Default.Home,
+                                                contentDescription = "Centre",
+                                                tint = AadhaarBlue,
+                                                modifier = Modifier.size(20.dp)
+                                            )
+                                        }
+                                        Spacer(modifier = Modifier.height(4.dp))
+                                        Text(
+                                            text = "Point top of phone forward to align with arrow",
+                                            fontSize = 9.sp,
+                                            color = Color.Gray,
+                                            textAlign = TextAlign.Center
+                                        )
+                                    }
+
+                                    Spacer(modifier = Modifier.height(12.dp))
+
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                    ) {
+                                        Button(
+                                            onClick = {
+                                                val uriStr = "google.navigation:q=$centreLat,$centreLng"
+                                                val gmmIntentUri = Uri.parse(uriStr)
+                                                val mapIntent = Intent(Intent.ACTION_VIEW, gmmIntentUri).apply {
+                                                    setPackage("com.google.android.apps.maps")
+                                                }
+                                                context.startActivity(mapIntent)
+                                            },
+                                            colors = ButtonDefaults.buttonColors(containerColor = AadhaarBlue),
+                                            modifier = Modifier.weight(1f)
+                                        ) {
+                                            Icon(Icons.Default.Directions, "Directions")
+                                            Spacer(modifier = Modifier.width(4.dp))
+                                            Text("Open Navigator", fontSize = 11.sp)
+                                        }
+
+                                        OutlinedButton(
+                                            onClick = { isTracking = false },
+                                            modifier = Modifier.weight(1f)
+                                        ) {
+                                            Icon(Icons.Default.Stop, "Stop")
+                                            Spacer(modifier = Modifier.width(4.dp))
+                                            Text("Stop GPS", fontSize = 11.sp)
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(16.dp))
 
                 // ADMIN ACTION CONTROLS (If role is Admin)
                 if (currentRole == "ADMIN") {
