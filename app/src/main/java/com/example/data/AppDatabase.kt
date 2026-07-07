@@ -6,12 +6,12 @@ import androidx.room.Room
 import androidx.room.RoomDatabase
 
 @Database(
-    entities = [CscPartner::class, Appointment::class, CommissionPayment::class, AppSetting::class],
-    version = 1,
+    entities = [AadhaarProfile::class, UpdateRequest::class, PvcOrder::class, AadhaarSetting::class],
+    version = 3,
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
-    abstract fun askDao(): AskDao
+    abstract fun aadhaarDao(): AadhaarDao
 
     companion object {
         @Volatile
@@ -22,7 +22,7 @@ abstract class AppDatabase : RoomDatabase() {
                 val instance = Room.databaseBuilder(
                     context.applicationContext,
                     AppDatabase::class.java,
-                    "ask_appointment_db"
+                    "suhib_billing_db"
                 )
                 .fallbackToDestructiveMigration()
                 .build()
@@ -32,3 +32,4 @@ abstract class AppDatabase : RoomDatabase() {
         }
     }
 }
+

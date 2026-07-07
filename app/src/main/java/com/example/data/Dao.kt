@@ -4,56 +4,61 @@ import androidx.room.*
 import kotlinx.coroutines.flow.Flow
 
 @Dao
-interface AskDao {
-    // === CSC Partners ===
-    @Query("SELECT * FROM csc_partners ORDER BY name ASC")
-    fun getAllPartners(): Flow<List<CscPartner>>
+interface AadhaarDao {
+    // === Aadhaar Profile ===
+    @Query("SELECT * FROM aadhaar_profiles WHERE id = 1 LIMIT 1")
+    fun getProfileFlow(): Flow<AadhaarProfile?>
 
-    @Query("SELECT * FROM csc_partners WHERE partnerId = :partnerId LIMIT 1")
-    suspend fun getPartnerById(partnerId: String): CscPartner?
-
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun insertPartner(partner: CscPartner)
-
-    @Update
-    suspend fun updatePartner(partner: CscPartner)
-
-    @Query("DELETE FROM csc_partners WHERE partnerId = :partnerId")
-    suspend fun deletePartner(partnerId: String)
-
-    // === Appointments ===
-    @Query("SELECT * FROM appointments ORDER BY createdAt DESC")
-    fun getAllAppointments(): Flow<List<Appointment>>
-
-    @Query("SELECT * FROM appointments WHERE partnerId = :partnerId ORDER BY createdAt DESC")
-    fun getAppointmentsByPartner(partnerId: String): Flow<List<Appointment>>
-
-    @Query("SELECT * FROM appointments WHERE id = :id LIMIT 1")
-    suspend fun getAppointmentById(id: Int): Appointment?
+    @Query("SELECT * FROM aadhaar_profiles WHERE id = 1 LIMIT 1")
+    suspend fun getProfileSync(): AadhaarProfile?
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun insertAppointment(appointment: Appointment): Long
+    suspend fun insertOrUpdateProfile(profile: AadhaarProfile)
 
-    @Update
-    suspend fun updateAppointment(appointment: Appointment)
+    // === Update Requests ===
+    @Query("SELECT * FROM update_requests ORDER BY requestDateMillis DESC")
+    fun getAllUpdateRequests(): Flow<List<UpdateRequest>>
 
-    @Query("DELETE FROM appointments WHERE id = :id")
-    suspend fun deleteAppointmentById(id: Int)
+    @Query("SELECT * FROM update_requests ORDER BY requestDateMillis DESC LIMIT :limit")
+    fun getRecentUpdateRequests(limit: Int = 5): Flow<List<UpdateRequest>>
 
-    // === Commission Payments ===
-    @Query("SELECT * FROM commission_payments ORDER BY paymentDate DESC")
-    fun getAllPayments(): Flow<List<CommissionPayment>>
-
-    @Query("SELECT * FROM commission_payments WHERE partnerId = :partnerId ORDER BY paymentDate DESC")
-    fun getPaymentsForPartner(partnerId: String): Flow<List<CommissionPayment>>
-
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun insertPayment(payment: CommissionPayment)
-
-    // === App Settings ===
-    @Query("SELECT * FROM app_settings WHERE `key` = :key LIMIT 1")
-    suspend fun getSetting(key: String): AppSetting?
+    @Query("""
+        SELECT * FROM update_requests 
+        WHERE urnNumber LIKE '%' || :query || '%' 
+           OR updateType LIKE '%' || :query || '%' 
+           OR updateTypeHindi LIKE '%' || :query || '%' 
+           OR newValue LIKE '%' || :query || '%' 
+        ORDER BY requestDateMillis DESC
+    """)
+    fun searchUpdateRequests(query: String): Flow<List<UpdateRequest>>
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun insertSetting(setting: AppSetting)
+    suspend fun insertUpdateRequest(req: UpdateRequest): Long
+
+    @Query("DELETE FROM update_requests WHERE id = :id")
+    suspend fun deleteUpdateRequestById(id: Int)
+
+    @Query("DELETE FROM update_requests")
+    suspend fun clearAllUpdateRequests()
+
+    // === PVC Orders ===
+    @Query("SELECT * FROM pvc_orders ORDER BY orderDateMillis DESC")
+    fun getAllPvcOrders(): Flow<List<PvcOrder>>
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertPvcOrder(order: PvcOrder): Long
+
+    @Query("DELETE FROM pvc_orders WHERE id = :id")
+    suspend fun deletePvcOrderById(id: Int)
+
+    // === Settings ===
+    @Query("SELECT * FROM aadhaar_settings WHERE id = 1 LIMIT 1")
+    fun getSettingFlow(): Flow<AadhaarSetting?>
+
+    @Query("SELECT * FROM aadhaar_settings WHERE id = 1 LIMIT 1")
+    suspend fun getSettingSync(): AadhaarSetting?
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertOrUpdateSetting(setting: AadhaarSetting)
 }
+

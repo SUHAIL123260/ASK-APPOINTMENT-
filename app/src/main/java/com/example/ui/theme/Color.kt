@@ -2,18 +2,24 @@ package com.example.ui.theme
 
 import androidx.compose.ui.graphics.Color
 
-val AadhaarBlue = Color(0xFF0F3C6D)
-val AadhaarBlueLight = Color(0xFF3F6B9D)
-val AadhaarBlueDark = Color(0xFF071F3A)
+val AadhaarNavy = Color(0xFF0F3C6D)
+val AadhaarNavyLight = Color(0xFF1E5899)
+val AadhaarNavyDark = Color(0xFF0A192F)
 
-val SaffronOrange = Color(0xFFE57A23)
-val SaffronOrangeLight = Color(0xFFFFAB6D)
-val SaffronOrangeDark = Color(0xFFB14E00)
+val SaffronOrange = Color(0xFFFF9933)
+val IndiaGreen = Color(0xFF138808)
+val AccentGold = Color(0xFFF2A900)
+val AadhaarSaffron = SaffronOrange
+val AadhaarGreen = IndiaGreen
 
-val CharcoalDark = Color(0xFF2C2C2C)
-val LightSurface = Color(0xFFFFFAFA)
-val SoftGrayBg = Color(0xFFF2F4F7)
+val LightBackground = Color(0xFFF4F7FB)
+val LightSurface = Color(0xFFFFFFFF)
+val DarkBackground = Color(0xFF0A192F)
+val DarkSurface = Color(0xFF112240)
+val TextCharcoal = Color(0xFF1A2433)
 
 val StateGreen = Color(0xFF2E7D32)
-val StateRed = Color(0xFFC62828)
-val StateAmber = Color(0xFFEF6C00)
+val StateRed = Color(0xFFD32F2F)
+val StateBlue = Color(0xFF1976D2)
+val SoftGrayBg = Color(0xFFEBF1F6)
+

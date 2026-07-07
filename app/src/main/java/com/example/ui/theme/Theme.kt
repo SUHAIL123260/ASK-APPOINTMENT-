@@ -12,33 +12,33 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 
 private val DarkColorScheme = darkColorScheme(
-    primary = SaffronOrangeLight,
-    secondary = AadhaarBlueLight,
-    tertiary = SaffronOrange,
-    background = Color(0xFF121212),
-    surface = Color(0xFF1E1E1E),
-    onPrimary = Color.Black,
-    onSecondary = Color.White,
-    onBackground = Color(0xFFE3E2E6),
-    onSurface = Color(0xFFE3E2E6)
+    primary = AadhaarNavyLight,
+    secondary = SaffronOrange,
+    tertiary = IndiaGreen,
+    background = DarkBackground,
+    surface = DarkSurface,
+    onPrimary = Color.White,
+    onSecondary = Color.Black,
+    onBackground = Color(0xFFEBF1F6),
+    onSurface = Color(0xFFEBF1F6)
 )
 
 private val LightColorScheme = lightColorScheme(
-    primary = AadhaarBlue,
+    primary = AadhaarNavy,
     secondary = SaffronOrange,
-    tertiary = AadhaarBlueLight,
-    background = SoftGrayBg,
+    tertiary = IndiaGreen,
+    background = LightBackground,
     surface = LightSurface,
     onPrimary = Color.White,
     onSecondary = Color.White,
-    onBackground = CharcoalDark,
-    onSurface = CharcoalDark
+    onBackground = TextCharcoal,
+    onSurface = TextCharcoal
 )
 
 @Composable
-fun MyApplicationTheme(
+fun AadhaarTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
-    dynamicColor: Boolean = false, // Set false to prioritize our high-contrast branded colors
+    dynamicColor: Boolean = false,
     content: @Composable () -> Unit,
 ) {
     val colorScheme = when {
@@ -56,3 +56,11 @@ fun MyApplicationTheme(
         content = content
     )
 }
+
+@Composable
+fun SuhibBillingTheme(
+    darkTheme: Boolean = isSystemInDarkTheme(),
+    dynamicColor: Boolean = false,
+    content: @Composable () -> Unit
+) = AadhaarTheme(darkTheme, dynamicColor, content)
+
